@@ -8,12 +8,24 @@ import FaceRecognition from './components/FaceRecognition/FaceRecognition';
 import Register from './components/Register/Register';
 import Signin from './components/Signin/Signin';
 import Particles from "react-tsparticles";
-import Clarifai from 'clarifai';
+
 //import { response } from 'express';
 
-const app = new Clarifai.App({
-  apiKey: '0a409bc202f74f10af0cb863826b31d0'
-});
+const initialState = {
+  input:'',
+  imageUrl:'',
+  box:{},
+  route: 'signin',
+  isSignedIn: false,
+  user:{
+    id: '',
+    name: '',
+    email: '',
+    entries: 0,
+    joined: ''
+  }
+}
+
 
 class App extends Component {
   constructor() {
@@ -70,10 +82,14 @@ class App extends Component {
 
   onButtonSubmit= () =>{
     this.setState({imageUrl: this.state.input})
-    app.models
-    .predict(
-      'f76196b43bbd45c99b4f3cd8e8b40a8a', 
-      this.state.input )
+    fetch('http://localhost:3000/imageurl', {
+      method: 'post',
+      headers:{'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        input: this.state.input
+      })
+    })
+    .then(response => response.json())
     .then( response => {
       if (response) {
         fetch('http://localhost:3000/image', {
@@ -89,6 +105,7 @@ class App extends Component {
             this.setState(Object.assign(this.state.user, {entries: count}))
           )
         })
+        .catch(console.log('Connot connect to server'))
       }
       this.displayFaceBox(this.calculateFaceLocation(response))
     })
@@ -97,7 +114,7 @@ class App extends Component {
 
   onRouteChange = (route) => {
     if (route === 'signout'){
-      this.setState({isSignedIn: false})
+      this.setState(initialState)
     } else if (route === 'home') {
       this.setState({isSignedIn: true})
     }
